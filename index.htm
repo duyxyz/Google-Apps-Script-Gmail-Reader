@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ứng dụng đọc Gmail</title>
+  <style>
+    body {
+      font-family: Roboto, Arial, sans-serif; /* Thử dùng font Roboto nếu có */
+      margin: 0;
+      padding: 0;
+      background-color: #f6f8fa; /* Nền nhẹ nhàng hơn */
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh; /* Full viewport height */
+      color: #3c4043; /* Màu chữ mặc định của Gmail */
+    }
+    .container {
+      max-width: 100%; /* Sử dụng toàn bộ chiều rộng có thể */
+      margin: 0; /* Loại bỏ margin trên cùng/dưới cùng để tràn viền hơn */
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 0; /* Bỏ border-radius */
+      box-shadow: none; /* Bỏ box-shadow */
+      flex-grow: 1;
+      box-sizing: border-box; /* Bao gồm padding và border trong width/height */
+      padding-left: 20px; /* Thêm khoảng trống hai bên */
+      padding-right: 20px;
+    }
+    @media (min-width: 768px) {
+      .container {
+        padding: 20px 40px; /* Tăng padding ngang trên màn hình lớn */
+      }
+    }
+    @media (min-width: 1024px) {
+      .container {
+        padding-left: 50px; /* Thêm khoảng trống hai bên */
+        padding-right: 50px;
+      }
+    }
+    @media (min-width: 1200px) {
+      .container {
+        max-width: 1200px; /* Giới hạn độ rộng tối đa trên màn hình rất lớn */
+        margin: 0 auto; /* Căn giữa lại */
+      }
+    }
+
+    /* Login Page */
+    #login-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-grow: 1;
+      background-color: #f6f8fa; /* Nền nhẹ nhàng cho trang login */
+      opacity: 0; /* Ban đầu ẩn để chuẩn bị cho animation */
+      transform: translateY(10px); /* Bắt đầu dịch chuyển */
+    }
+    .login-box {
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 0; /* Bỏ border-radius */
+      box-shadow: none; /* Bỏ box-shadow */
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-box h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .login-box input[type="password"] {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 0; /* Bỏ border-radius */
+    }
+    .login-box button {
+      background-color: white; /* Màu nền trắng */
+      color: #1a73e8; /* Màu chữ xanh */
+      border: 1px solid #1a73e8; /* Viền xanh */
+      height: 40px; /* Chiều cao cố định cho nút */
+      border-radius: 0; /* Bỏ border-radius */
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+      display: flex; /* Dùng flexbox để căn chỉnh nội dung */
+      align-items: center; /* Căn giữa theo chiều dọc */
+      justify-content: center; /* Căn giữa theo chiều ngang */
+      min-width: 120px; /* Đảm bảo kích thước tối thiểu cho nút */
+      box-sizing: border-box;
+      /* Đã loại bỏ hiệu ứng hover tại đây */
+    }
+    .login-box button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .error-msg {
+      color: #d93025; /* Màu lỗi của Google */
+      margin-top: 10px;
+      display: none;
+    }
+    /* Main Page */
+    #main-page {
+      display: none;
+      flex-grow: 1;
+      opacity: 0; /* Ban đầu ẩn để chuẩn bị cho animation */
+      transform: translateY(10px); /* Bắt đầu dịch chuyển */
+    }
+    .tab-buttons {
+      display: flex;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #dadce0; /* Đường kẻ dưới tab */
+    }
+    .tab-buttons button {
+      background-color: transparent;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-size: 15px;
+      color: #5f6368;
+      position: relative;
+      outline: none;
+    }
+    .tab-buttons button.active {
+      color: #1a73e8; /* Màu tab active của Google */
+      font-weight: 500;
+    }
+    .tab-buttons button.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; /* Đặt dưới đường kẻ */
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #1a73e8; /* Đường kẻ dưới tab active */
+    }
+    .tab-buttons button.active-spam {
+      color: #d93025; /* Màu đỏ cho spam */
+    }
+    .tab-buttons button.active-spam::after {
+      background-color: #d93025;
+    }
+
+    .controls {
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #dadce0; /* Đường kẻ dưới controls */
+    }
+    .controls label {
+      color: #5f6368;
+    }
+    .controls input[type="number"] {
+      width: 60px; /* Cố định chiều rộng */
+      height: 30px; /* Chiều cao cố định */
+      padding: 0 5px; /* Điều chỉnh padding */
+      border: 1px solid #dadce0;
+      border-radius: 0; /* Bỏ border-radius */
+      text-align: center;
+      box-sizing: border-box; /* Tính border và padding vào kích thước */
+    }
+    .controls button {
+      background-color: white; /* Màu nền trắng */
+      color: #1a73e8; /* Màu chữ xanh */
+      border: 1px solid #1a73e8; /* Viền xanh */
+      height: 32px; /* Chiều cao cố định cho nút, lớn hơn input một chút để căn chỉnh */
+      border-radius: 0; /* Bỏ border-radius */
+      cursor: pointer;
+      font-size: 14px;
+      display: flex; /* Dùng flexbox để căn chỉnh nội dung */
+      align-items: center; /* Căn giữa theo chiều dọc */
+      justify-content: center; /* Căn giữa theo chiều ngang */
+      min-width: 120px; /* Đảm bảo kích thước tối thiểu cho nút */
+      box-sizing: border-box;
+      /* Đã loại bỏ hiệu ứng hover tại đây */
+    }
+    .controls button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    /* Email List Styling */
+    .email-list {
+        background-color: #fff;
+        border: 1px solid #dadce0; /* Giữ border để phân biệt danh sách */
+        border-radius: 0; /* Bỏ border-radius */
+        overflow: hidden;
+        margin-top: 15px;
+    }
+    .email-row {
+      display: grid;
+      /* Điều chỉnh grid-template-columns để cân đối hơn trên các màn hình */
+      grid-template-columns: minmax(100px, 200px) 1fr minmax(80px, 120px); /* From, Subject/Snippet, Date */
+      align-items: center; /* Căn giữa theo chiều dọc */
+      padding: 12px 20px;
+      border-bottom: 1px solid #e8eaed; /* Đường kẻ giữa các email */
+      cursor: pointer;
+      position: relative;
+    }
+    .email-row:last-child {
+      border-bottom: none; /* Không có đường kẻ ở email cuối cùng */
+    }
+    .email-row:hover {
+      background-color: #f5f5f5; /* Màu nền khi hover */
+    }
+
+    .email-row .from {
+      font-weight: 700; /* Người gửi đậm */
+      color: #202124;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-right: 10px;
+    }
+    .email-row .content-wrapper { /* Wrapper cho subject và snippet */
+        display: flex;
+        flex-grow: 1;
+        min-width: 0; /* Cho phép co lại */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .email-row .subject {
+      font-weight: 500; /* Chủ đề đậm vừa */
+      color: #202124;
+      /* Không cần overflow/text-overflow ở đây nếu wrapper đã xử lý */
+      flex-shrink: 0; /* Đảm bảo chủ đề không bị co quá mức */
+    }
+    .email-row .snippet {
+      color: #5f6368;
+      margin-left: 5px; /* Khoảng cách giữa subject và snippet */
+      /* Phần còn lại của overflow/text-overflow sẽ do content-wrapper xử lý */
+    }
+    .email-row .date {
+      color: #5f6368;
+      font-size: 0.85em;
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .email-row.unread {
+      background-color: #fff; /* Email chưa đọc vẫn nền trắng */
+      font-weight: 700; /* Toàn bộ hàng chưa đọc sẽ đậm */
+    }
+    .email-row.unread .from,
+    .email-row.unread .subject,
+    .email-row.unread .snippet,
+    .email-row.unread .date {
+        font-weight: 700; /* Đậm cho từng phần của email chưa đọc */
+        color: #202124;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Popup */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      opacity: 0; /* Ban đầu ẩn để chuẩn bị cho animation */
+      transform: translateY(10px); /* Bắt đầu dịch chuyển */
+    }
+    .popup-content {
+  background: #fff;
+  padding: 20px;
+  border-radius: 0;
+  box-shadow: none;
+  position: relative;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+
+  /* Ẩn thanh cuộn cho WebKit browsers (Chrome, Safari) */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Ẩn thanh cuộn cho Firefox */
+  scrollbar-width: none; /* Ẩn thanh cuộn */
+
+  /* Ẩn thanh cuộn cho Microsoft Edge (và IE) */
+  -ms-overflow-style: none; /* Ẩn thanh cuộn */
+}
+    .email-body { margin-top: 20px; }
+    .pagination-controls {
+        display: none; /* Bỏ phân trang */
+    }
+
+    /* Animation cho trang */
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .flex-center { display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .hidden { display: none; }
+    .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; -webkit-transition: .4s; transition: .4s; border-radius: 20px; }
+    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; -webkit-transition: .4s; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #1a73e8; } /* Màu xanh Google */
+    input:checked + .slider:before { -webkit-transform: translateX(20px); -ms-transform: translateX(20px); transform: translateX(20px); }
+
+    /* Footer */
+    footer {
+        background-color: #f6f8fa; /* Nền nhẹ nhàng hơn */
+        color: #5f6368; /* Màu chữ xám */
+        text-align: center;
+        padding: 15px 0;
+        margin-top: 20px;
+        border-top: 1px solid #dadce0;
+    }
+  </style>
+</head>
+<body>
+  <div id="login-page">
+    <div class="login-box">
+      <h2>🔐 Đăng nhập</h2>
+      <div>
+        <label>Mã PIN</label>
+        <input type="password" id="pin" autofocus>
+      </div>
+      <button id="login-btn" onclick="login()">
+        <span id="login-text">Đăng nhập</span>
+      </button>
+      <p id="error" class="error-msg">Mã PIN không đúng!</p>
+    </div>
+  </div>
+
+  <div id="main-page" class="hidden container">
+    <div class="tab-buttons">
+      <button onclick="showTab('inbox', event)" class="active">Hòm thư</button>
+      <button onclick="showTab('spam', event)">Thư rác</button>
+    </div>
+
+    <div class="controls">
+      <label>
+        Tự động tải lại mỗi 10 giây
+        <label class="switch">
+          <input type="checkbox" id="auto-reload-toggle">
+          <span class="slider"></span>
+        </label>
+      </label>
+
+      <div class="flex-center">
+        <label>Số email:</label>
+        <input type="number" id="email-limit" min="1" max="50" value="10">
+        <button id="reload-btn" onclick="manualReload()">
+          <span id="reload-text">Tải lại mail</span>
+        </button>
+      </div>
+    </div>
+
+    <div id="inbox" class="tab-content active email-list">
+      <div id="inbox-list"></div>
+    </div>
+
+    <div id="spam" class="tab-content email-list">
+      <div id="spam-list"></div>
+    </div>
+
+    <div id="pagination-controls"></div>
+  </div>
+
+  <div id="email-popup" class="popup">
+    <div class="popup-content">
+      <div id="email-content" class="email-body"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Ứng dụng đọc Gmail - Phát triển bởi <strong>Nguyễn Minh Duy</strong></p>
+    <p>© <span id="current-year"></span>. All rights reserved.</p>
+  </footer>
+
+  <script>
+    let currentTab = 'inbox';
+    let inboxEmails = [], spamEmails = [];
+    let currentPage = 1;
+    const pageSize = 50;
+    let autoReloadInterval = null;
+
+    async function login(event) {
+      if (event && event.key === 'Enter') event.preventDefault();
+      const btn = document.getElementById('login-btn');
+      // const spinner = document.getElementById('login-spinner'); // Đã xóa
+      const text = document.getElementById('login-text');
+      const error = document.getElementById('error');
+
+      // spinner.style.display = 'inline-block'; // Đã xóa
+      text.textContent = 'Đang đăng nhập...';
+      btn.disabled = true;
+
+      try {
+        const pin = document.getElementById('pin').value;
+        const isValid = await new Promise(resolve => google.script.run.withSuccessHandler(resolve).validatePin(pin));
+        if (isValid) {
+          const expiryDays = await new Promise(resolve => google.script.run.withSuccessHandler(resolve).getPinExpiryDays());
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + expiryDays);
+          localStorage.setItem('pin', pin);
+          localStorage.setItem('pinExpiry', expiry.getTime());
+          showMainPage();
+        } else {
+          error.style.display = 'block';
+        }
+      } catch (e) {
+        error.textContent = 'Đã xảy ra lỗi: ' + e.message;
+        error.style.display = 'block';
+      } finally {
+        // spinner.style.display = 'none'; // Đã xóa
+        text.textContent = 'Đăng nhập';
+        btn.disabled = false;
+      }
+    }
+
+    function checkAutoLogin() {
+      const saved = localStorage.getItem('pin');
+      const expiry = localStorage.getItem('pinExpiry');
+      if (saved && Date.now() < parseInt(expiry)) {
+        google.script.run.withSuccessHandler(isValid => {
+          if (isValid) {
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('main-page').style.display = 'block';
+            document.getElementById('main-page').classList.add('fade-in'); // Thêm animation
+            manualReload();
+          }
+        }).validatePin(saved);
+      }
+    }
+
+    async function showMainPage() {
+      document.getElementById('login-page').style.display = 'none';
+      document.getElementById('main-page').style.display = 'block';
+      document.getElementById('main-page').classList.add('fade-in'); // Thêm animation
+      await manualReload();
+    }
+
+    async function manualReload() {
+      const btn = document.getElementById('reload-btn');
+      // const spinner = document.getElementById('reload-spinner'); // Đã xóa
+      const text = document.getElementById('reload-text');
+      // spinner.style.display = 'inline-block'; // Đã xóa
+      text.textContent = 'Đang tải mail...';
+      btn.disabled = true; // Disable reload button during loading
+      await loadAllEmails();
+      (currentTab === 'inbox') ? loadEmails() : loadSpamEmails();
+      // spinner.style.display = 'none'; // Đã xóa
+      text.textContent = 'Tải lại mail';
+      btn.disabled = false; // Enable reload button after loading
+    }
+
+    async function loadAllEmails() {
+      const limit = parseInt(document.getElementById('email-limit').value) || 10;
+      inboxEmails = await new Promise(resolve => google.script.run.withSuccessHandler(resolve).getAllEmailsWithHtml(limit));
+      spamEmails = await new Promise(resolve => google.script.run.withSuccessHandler(resolve).getAllSpamEmailsWithHtml(limit));
+    }
+
+    function showTab(tab, event) {
+      currentTab = tab;
+      currentPage = 1;
+      document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+      document.getElementById(tab).style.display = 'block';
+
+      document.querySelectorAll('.tab-buttons button').forEach(btn => {
+        btn.classList.remove('active', 'active-spam');
+      });
+
+      if (tab === 'inbox') {
+        event.target.classList.add('active');
+        loadEmails();
+      } else {
+        event.target.classList.add('active-spam');
+        loadSpamEmails();
+      }
+    }
+
+    // Function paginate và renderPagination không còn được sử dụng nhưng giữ lại phòng khi cần
+    function paginate(arr, page) {
+      return arr.slice((page - 1) * pageSize, page * pageSize);
+    }
+
+    function renderPagination(total) {
+      const totalPages = Math.ceil(total / pageSize);
+      const container = document.getElementById('pagination-controls');
+      container.innerHTML = '';
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.className = `pagination-btn ${i === currentPage ? 'active' : ''}`;
+        btn.onclick = () => {
+          currentPage = i;
+          currentTab === 'inbox' ? loadEmails() : loadSpamEmails();
+        };
+        container.appendChild(btn);
+      }
+    }
+
+    function loadEmails() {
+      const listContainer = document.getElementById('inbox-list');
+      listContainer.innerHTML = ''; // Clear previous emails
+      const pageEmails = paginate(inboxEmails, currentPage); // Vẫn gọi paginate nhưng chỉ có 1 trang
+      pageEmails.forEach(email => {
+        const row = document.createElement('div'); // Using div instead of tr
+        row.className = `email-row ${email.isUnread ? 'unread' : ''}`;
+        row.onclick = () => showEmailPopup(email);
+
+        // Create individual spans for better styling control
+        const fromSpan = document.createElement('span');
+        fromSpan.className = 'from';
+        fromSpan.textContent = email.from.split('<')[0].trim(); // Get name only
+        row.appendChild(fromSpan);
+
+        const contentWrapper = document.createElement('div'); // Wrapper for subject and snippet
+        contentWrapper.className = 'content-wrapper';
+        
+        const subjectSpan = document.createElement('span');
+        subjectSpan.className = 'subject';
+        subjectSpan.textContent = email.subject;
+        contentWrapper.appendChild(subjectSpan);
+
+        const snippetSpan = document.createElement('span');
+        snippetSpan.className = 'snippet';
+        snippetSpan.textContent = ` - ${email.snippet}`; // Add a separator
+        contentWrapper.appendChild(snippetSpan);
+
+        row.appendChild(contentWrapper);
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'date';
+        dateSpan.textContent = email.date;
+        row.appendChild(dateSpan);
+
+        listContainer.appendChild(row);
+      });
+      // renderPagination(inboxEmails.length); // Bỏ renderPagination
+    }
+
+    function loadSpamEmails() {
+      const listContainer = document.getElementById('spam-list');
+      listContainer.innerHTML = ''; // Clear previous emails
+      const pageEmails = paginate(spamEmails, currentPage); // Vẫn gọi paginate nhưng chỉ có 1 trang
+      pageEmails.forEach(email => {
+        const row = document.createElement('div'); // Using div instead of tr
+        row.className = `email-row ${email.isUnread ? 'unread' : ''}`;
+        row.onclick = () => showEmailPopup(email);
+
+        const fromSpan = document.createElement('span');
+        fromSpan.className = 'from';
+        fromSpan.textContent = email.from.split('<')[0].trim();
+        row.appendChild(fromSpan);
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'content-wrapper';
+
+        const subjectSpan = document.createElement('span');
+        subjectSpan.className = 'subject';
+        subjectSpan.textContent = email.subject;
+        contentWrapper.appendChild(subjectSpan);
+
+        const snippetSpan = document.createElement('span');
+        snippetSpan.className = 'snippet';
+        snippetSpan.textContent = ` - ${email.snippet}`;
+        contentWrapper.appendChild(snippetSpan);
+
+        row.appendChild(contentWrapper);
+
+        const dateSpan = document.createElement('span');
+        dateSpan.className = 'date';
+        dateSpan.textContent = email.date;
+        row.appendChild(dateSpan);
+
+        listContainer.appendChild(row);
+      });
+      // renderPagination(spamEmails.length); // Bỏ renderPagination
+    }
+
+    async function showEmailPopup(email) {
+      const content = document.getElementById('email-content');
+      content.innerHTML = email.html || `<div>${email.snippet}</div><p style="font-size: 0.9em; color: #666;">Không tìm thấy nội dung HTML đầy đủ.</p>`;
+      document.getElementById('email-popup').style.display = 'flex';
+      document.getElementById('email-popup').classList.add('fade-in'); // Thêm animation
+      if (email.isUnread) {
+        await new Promise(resolve => google.script.run.withSuccessHandler(resolve).markAsRead(email.id));
+        email.isUnread = false;
+        // Re-render the current list to update the unread status
+        currentTab === 'inbox' ? loadEmails() : loadSpamEmails();
+      }
+    }
+
+    function closePopup() {
+      document.getElementById('email-popup').style.display = 'none';
+      document.getElementById('email-popup').classList.remove('fade-in'); // Xóa animation khi đóng
+    }
+
+    document.getElementById('auto-reload-toggle').addEventListener('change', function () {
+      localStorage.setItem('autoReload', this.checked);
+      if (this.checked) {
+        manualReload();
+        autoReloadInterval = setInterval(manualReload, 10000);
+      } else {
+        clearInterval(autoReloadInterval);
+      }
+    });
+
+    window.onload = () => {
+      checkAutoLogin();
+      // Đảm bảo login-page có animation nếu nó hiển thị ban đầu
+      if (document.getElementById('login-page').style.display !== 'none') {
+        document.getElementById('login-page').classList.add('fade-in');
+      }
+
+      const saved = localStorage.getItem('autoReload') === 'true';
+      document.getElementById('auto-reload-toggle').checked = saved;
+      if (saved) autoReloadInterval = setInterval(manualReload, 10000);
+      document.getElementById('email-limit').addEventListener('input', () => {
+        setTimeout(async () => {
+          currentPage = 1;
+          await loadAllEmails();
+          (currentTab === 'inbox') ? loadEmails() : loadSpamEmails();
+        }, 1000);
+      });
+      document.getElementById('current-year').textContent = new Date().getFullYear();
+    };
+
+    document.getElementById('email-popup').addEventListener('click', (event) => {
+      if (event.target === document.getElementById('email-popup')) closePopup();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && document.getElementById('login-page').style.display !== 'none') login(event);
+      else if (event.key === 'Escape') closePopup();
+    });
+  </script>
+</body>
+</html>

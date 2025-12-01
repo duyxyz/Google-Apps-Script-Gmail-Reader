@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gmail</title>
+  <title>Ứng dụng đọc Gmail Đơn giản</title>
   <style>
-    /* Ẩn thanh cuộn cho toàn bộ trang (Vẫn giữ nguyên) */
+    /* Ẩn thanh cuộn cho toàn bộ trang */
     html { 
       overflow-y: hidden; 
       overflow-x: hidden; 
@@ -15,7 +15,7 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      /* FIX 1: Đặt nền body thành màu trắng để loại bỏ "nền phía sau" */
+      /* Nền trắng (Full width, không có "nền phía sau") */
       background-color: #fff; 
       color: #333;
       min-height: 100vh; 
@@ -25,7 +25,7 @@
 
     .container {
       flex-grow: 1;
-      /* FIX 2: Bỏ padding, margin và border để khung là full width không viền */
+      /* Full width: Bỏ padding, margin và border */
       padding: 0; 
       width: 100%; 
       max-width: none; 
@@ -35,10 +35,10 @@
       box-sizing: border-box;
       display: flex; 
       flex-direction: column;
-      min-height: 100vh; /* Kéo dài full height */
+      min-height: 100vh;
     }
 
-    /* --- LOGIN PAGE (Siêu Clean) --- */
+    /* --- LOGIN PAGE --- */
     #login-page {
       display: flex;
       align-items: center;
@@ -49,22 +49,21 @@
       flex-direction: column;
     }
     
-    /* Giao diện 8 ô PIN mới */
     .pin-input-container {
         display: flex;
         justify-content: center;
-        gap: 10px; /* Khoảng cách giữa các ô */
+        gap: 10px;
         margin: 0 auto 10px; 
         width: fit-content;
     }
 
     .pin-input {
-        width: 30px; /* Chiều rộng mỗi ô */
+        width: 30px; 
         height: 40px;
         font-size: 24px;
         text-align: center;
         border: none;
-        border-bottom: 3px solid #ccc; /* Viền dưới nhẹ */
+        border-bottom: 3px solid #ccc;
         outline: none;
         transition: border-bottom-color 0.3s;
         background-color: transparent;
@@ -75,7 +74,7 @@
     }
 
     .pin-input:focus {
-        border-bottom-color: #007bff; /* Màu xanh khi focus */
+        border-bottom-color: #dc3545;
     }
 
     .error-msg {
@@ -94,12 +93,12 @@
       flex-grow: 1; 
     }
 
-    /* Gộp Tab và Controls */
+    /* Header (Tab và Controls) */
     .header-controls {
-      /* FIX 3: Thêm padding ngang cho header để nội dung không dính mép */
+      /* Thêm padding ngang cho header */
       padding: 10px; 
       border-bottom: 1px solid #ccc;
-      margin-bottom: 0; /* Xóa margin-bottom cũ */
+      margin-bottom: 0;
       display: flex;
       justify-content: space-between; 
       align-items: flex-end; 
@@ -117,10 +116,9 @@
     .tab-buttons button.active {
       background: #fff;
       border-bottom: none;
-      border-top: 2px solid #007bff;
+      border-top: 2px solid #dc3545;
     }
     
-    /* Cập nhật Controls */
     .controls {
       display: flex;
       gap: 10px;
@@ -128,19 +126,12 @@
       padding: 0;
     }
     
-    /* CĂN CHỈNH: Sử dụng transform vi mô để căn giữa tuyệt đối */
-    .controls label {
-        margin: 0;
-        line-height: 1; 
-        font-size: 14px; 
-        transform: translateY(0.5px); 
-    }
-    .controls input[type="checkbox"] {
+    .controls label, .controls input[type="checkbox"] {
         margin: 0;
         transform: translateY(0.5px); 
     }
 
-    /* Style cho tổ hợp Limit Controls */
+    /* Limit Controls */
     .limit-controls {
         display: flex;
         align-items: stretch;
@@ -148,7 +139,6 @@
         border-radius: 4px; 
         overflow: hidden; 
         margin-right: 10px;
-        transform: none; 
     }
     .limit-controls button {
         padding: 5px 10px; 
@@ -160,9 +150,6 @@
         min-width: unset !important;
         font-weight: bold;
     }
-    .limit-controls button:hover {
-        background-color: #ddd;
-    }
     .limit-controls span {
         padding: 5px 10px; 
         line-height: 1; 
@@ -173,13 +160,11 @@
         box-sizing: border-box;
         border-left: 1px solid #ccc;
         border-right: 1px solid #ccc;
-        pointer-events: none; 
+        pointer-events: none;
         font-size: 14px; 
     }
 
-    /* ---------------------------------- */
-    /* NEW RELOAD BUTTON STYLES */
-    /* ---------------------------------- */
+    /* Reload Button */
     .button {
       display: flex;
       justify-content: center;
@@ -187,43 +172,29 @@
       padding: 5px 8px; 
       gap: 6px; 
       border: none;
-      background: #007bff34; 
+      background: #f21d31; 
       border-radius: 20px;
       cursor: pointer;
       box-sizing: border-box;
       min-width: 90px;
-      transform: none; 
     }
-
     .lable {
       line-height: 1; 
       font-size: 15px;
-      color: #007bff; 
+      color: #ffffff; 
       letter-spacing: 1px;
     }
-
     .button:hover {
-      background: #007bff52; 
+      background: #dc354552; 
     }
-    
-    /* Kích hoạt animation khi loading hoặc hover */
     .button.loading .svg-icon,
     .button:hover .svg-icon {
       animation: spin 2s linear infinite;
     }
-
     @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(-360deg);
-      }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(-360deg); }
     }
-    /* ---------------------------------- */
-    /* END NEW RELOAD BUTTON STYLES */
-    /* ---------------------------------- */
 
 
     /* Email list container */
@@ -233,51 +204,47 @@
       flex-basis: 0;
       margin-top: 0; 
       min-height: 100px; 
-      /* FIX 4: Thêm padding ngang cho list */
+      /* Thêm padding ngang cho list */
       padding: 0 10px; 
       overflow-y: auto; 
-      /* ẨN SCROLLBAR (Firefox/IE/Edge) */
+      /* ẨN SCROLLBAR */
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    /* ẨN SCROLLBAR (Chrome/Safari/Webkit) */
     .email-list::-webkit-scrollbar {
         display: none;
     }
     
-    /* Viền chỉ xuất hiện khi có class "with-border" (tức là có email) */
     .email-list.with-border {
-        /* Bỏ viền của list container vì nó là full width */
         border: none; 
     }
 
     .email-row {
       display: flex;
-      /* FIX 5: Bỏ padding ngang trong email-row, chỉ giữ padding đứng */
-      padding: 10px 0; 
-      /* Giữ lại đường kẻ cho tất cả các hàng */
+      padding: 10px 0; /* Padding đứng 10px, ngang 0 */
       border-bottom: 1px solid #eee;
       cursor: pointer;
       align-items: center;
     }
     .email-row:hover { background-color: #f0f0f0; }
 
-    /* THAY ĐỔI CSS ĐỂ TÊN NGƯỜI GỬI IN ĐẬM */
-    .email-row .subject { /* Tên người gửi (in đậm) */
+    /* Tên người gửi (in đậm) */
+    .email-row .subject { 
       font-weight: bold;
       margin-right: 10px;
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
       flex-grow: 1;
-      max-width: 30%; /* Giảm không gian cho Tên người gửi */
+      max-width: 30%; 
     }
-    .email-row .snippet { /* Chủ đề (văn bản thường) */
+    /* Chủ đề (văn bản thường) */
+    .email-row .snippet { 
       color: #333; 
       font-size: 1em; 
       font-weight: normal; 
       flex-grow: 2;
-      max-width: 60%; /* Tăng không gian cho Chủ đề */
+      max-width: 60%; 
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
@@ -364,7 +331,7 @@
               fill="none"
               class="svg-icon"
             >
-              <g stroke-width="1.5" stroke-linecap="round" stroke="#007bff"> 
+              <g stroke-width="1.5" stroke-linecap="round" stroke="#ffffff"> 
                 <path
                   d="m3.33337 10.8333c0 3.6819 2.98477 6.6667 6.66663 6.6667 3.682 0 6.6667-2.9848 6.6667-6.6667 0-3.68188-2.9847-6.66664-6.6667-6.66664-1.29938 0-2.51191.37174-3.5371 1.01468"
                 ></path>
@@ -394,7 +361,7 @@
     let currentTab = 'inbox';
     let inboxEmails = [];
     let autoReloadInterval = null;
-    let currentLimit = 5; 
+    let currentLimit = 1; 
     const stepLimit = 1; 
     const minLimit = 1;
     const maxLimit = 50;
@@ -445,7 +412,6 @@
         inputs.forEach((input, index) => {
             // Xử lý input: Tự động nhảy ô
             input.addEventListener('input', (e) => {
-                // Chỉ chấp nhận 1 ký tự, nếu copy/paste nhiều ký tự, chỉ lấy ký tự đầu
                 if (e.data && e.data.length > 1) {
                     e.target.value = e.data[0];
                 }
@@ -454,7 +420,6 @@
                     if (index < inputs.length - 1) {
                         inputs[index + 1].focus();
                     } else {
-                        // Nếu là ô cuối cùng (thứ 8), tự động đăng nhập
                         login();
                     }
                 }
@@ -462,18 +427,16 @@
 
             // Xử lý backspace/delete: Tự động nhảy về ô trước
             input.addEventListener('keydown', (e) => {
-                // Kiểm tra nếu ô hiện tại trống và nhấn Backspace
                 if (e.key === 'Backspace' && input.value === '' && index > 0) {
-                    e.preventDefault(); // Ngăn xóa nội dung (vì ô đã trống)
+                    e.preventDefault();
                     inputs[index - 1].focus();
-                    inputs[index - 1].value = ''; // Xóa ký tự ở ô trước
+                    inputs[index - 1].value = '';
                 }
             });
             
             // Xử lý Paste (tối ưu trải nghiệm)
             input.addEventListener('paste', (e) => {
                 const pastedData = e.clipboardData.getData('text').trim();
-                // Nếu dữ liệu dán đủ để điền hết các ô còn lại
                 if (pastedData.length >= inputs.length - index) {
                     e.preventDefault();
                     for (let i = 0; i < inputs.length - index; i++) {
@@ -481,14 +444,12 @@
                             inputs[index + i].value = pastedData[i];
                         }
                     }
-                    // Tự động đăng nhập
                     login(); 
                 }
             });
         });
     }
 
-    // Các hàm phụ trợ khác (giữ nguyên)
     function checkAutoLogin() {
       const saved = localStorage.getItem('pin');
       const expiry = localStorage.getItem('pinExpiry');
@@ -535,8 +496,8 @@
 
     async function loadAllEmails() {
       const savedPin = localStorage.getItem('pin');
-      // Lưu ý: Hàm này yêu cầu Apps Script của bạn trả về field 'from'
       inboxEmails = await new Promise(resolve => 
+        // Gọi hàm Apps Script của bạn
         google.script.run.withSuccessHandler(resolve).getAllEmailsWithHtml(currentLimit, savedPin)
       );
     }
@@ -557,7 +518,7 @@
 
         if (inboxEmails.length === 0) {
             emailListDiv.classList.remove('with-border');
-            listContainer.innerHTML = '<div style="padding: 20px 10px; text-align: center; color: #666;">Không có email nào được tải.</div>';
+            listContainer.innerHTML = '<div style="padding: 20px 10px; text-align: center; color: #666;">Không có email nào được tải. (Kiểm tra thiết lập lọc trong Apps Script).</div>';
         } else {
             emailListDiv.classList.add('with-border');
             inboxEmails.forEach(email => renderEmailRow(listContainer, email));
@@ -642,7 +603,7 @@
 
     window.onload = () => {
       checkAutoLogin();
-      setupPinInputs(); // Thiết lập logic 8 ô
+      setupPinInputs();
       
       const saved = localStorage.getItem('autoReload') === 'true';
       document.getElementById('auto-reload-toggle').checked = saved;
@@ -656,7 +617,7 @@
       if (e.target === document.getElementById('email-popup')) closePopup();
     });
 
-    // Xử lý phím Esc để đóng Popup (Loại bỏ logic Enter để đăng nhập vì đã tự động)
+    // Xử lý phím Esc để đóng Popup
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') closePopup();
     });
